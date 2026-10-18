@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QUANTUM // 3D Periodic Table Pro Max</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #030712;
+      --bg-surface: rgba(15, 23, 42, 0.55);
+      --bg-card: rgba(30, 41, 59, 0.42);
+      --border-hairline: rgba(255, 255, 255, 0.12);
+      --border-highlight: rgba(255, 255, 255, 0.28);
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --accent-cyan: #06B6D4;
+      --accent-indigo: #6366F1;
+      --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(6, 182, 212, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
+        linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* 3D Viewport */
+    #viewport {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Top Header HUD */
+    .hud-header {
+      position: fixed;
+      top: 20px;
+      left: 280px;
+      right: 24px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: all 0.4s var(--spring-ease);
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-orb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 12px #10B981;
+      animation: pulseOrb 2s infinite;
+    }
+
+    @keyframes pulseOrb {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(6, 182, 212, 0.15);
+      color: #22D3EE;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+    }
+
+    .search-bar {
+      position: relative;
+      flex: 1;
+      max-width: 340px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      background: rgba(3, 7, 18, 0.6);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 9px 14px 9px 36px;
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-bar input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.18);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .glass-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.15s var(--spring-ease);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .glass-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.09);
+      border-color: var(--border-highlight);
+    }
+
+    .glass-btn.active {
+      background: rgba(6, 182, 212, 0.18);
+      border-color: #22D3EE;
+      color: #22D3EE;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+    }
+
+    /* ReactBits Line Sidebar */
+    .line-sidebar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      bottom: 20px;
+      width: 244px;
+      z-index: 20;
+      background: var(--bg-surface);
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      border: 1px solid var(--border-hairline);
+      border-radius: 18px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: transform 0.4s var(--spring-ease), opacity 0.4s var(--spring-ease);
+      overflow-y: auto;
+    }
+
+    .line-sidebar::-webkit-scrollbar {
+      width: 0px;
+    }
+
+    .sidebar-section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      padding-left: 12px;
+    }
+
+    .line-nav-container {
+      position: relative;
+      padding-left: 14px;
+      margin-bottom: 22px;
+    }
+
+    /* Continuous 1px track line */
+    .line-track {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      bottom: 4px;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Gliding active indicator line */
+    .line-indicator {
+      position: absolute;
+      left: 3px;
+      width: 3px;
+      height: 28px;
+      top: 0;
+      background: #22D3EE;
+      border-radius: 4px;
+      box-shadow: 0 0 12px #22D3EE;
+      transition: top 0.35s var(--spring-ease), height 0.35s var(--spring-ease), background-color 0.3s;
+    }
+
+    .nav-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 7px 10px;
+      margin-bottom: 3px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      text-align: left;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s var(--spring-ease);
+    }
+
+    .nav-item:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.04);
+      transform: translateX(2px);
+    }
+
+    .nav-item.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.07);
+      font-weight: 700;
+    }
+
+    .cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .nav-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Element 3D Card Styling (CSS3DRenderer) */
+    .element-card {
+      width: 130px;
+      height: 168px;
+      padding: 12px;
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.11) 0%, rgba(15, 23, 42, 0.55) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 
+        0 10px 28px rgba(0, 0, 0, 0.55),
+        inset 0 2px 3px rgba(255, 255, 255, 0.28),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s var(--spring-ease), border-color 0.25s, box-shadow 0.25s, opacity 0.35s;
+    }
+
+    /* Watermorphism glossy drop highlight */
+    .element-card::before {
+      content: '';
+      position: absolute;
+      top: -35%;
+      left: -35%;
+      width: 120%;
+      height: 70%;
+      background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 65%);
+      transform: rotate(-25deg);
+      pointer-events: none;
+    }
+
+    .element-card:hover {
+      border-color: var(--cat-color, #22D3EE);
+      box-shadow: 
+        0 0 32px var(--cat-glow, rgba(34, 211, 238, 0.45)),
+        inset 0 2px 5px rgba(255, 255, 255, 0.45);
+    }
+
+    .element-card.dimmed {
+      opacity: 0.12;
+      filter: grayscale(80%);
+      pointer-events: none;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .card-phase {
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--cat-color);
+      border: 1px solid var(--cat-color);
+    }
+
+    .card-symbol-wrap {
+      text-align: center;
+      margin: 4px 0;
+    }
+
+    .card-symbol {
+      font-size: 46px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #FFFFFF;
+      text-shadow: 0 4px 16px var(--cat-glow);
+      line-height: 1;
+    }
+
+    .card-bottom {
+      text-align: center;
+    }
+
+    .card-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #F8FAFC;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
+    }
+
+    .card-mass {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .card-bar {
+      height: 3px;
+      width: 100%;
+      background: var(--cat-color);
+      border-radius: 3px;
+      margin-top: 6px;
+      box-shadow: 0 0 10px var(--cat-color);
+    }
+
+    /* Slide-Over Inspector Drawer */
+    .inspector-drawer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      bottom: 20px;
+      width: 390px;
+      z-index: 30;
+      background: rgba(10, 15, 30, 0.78);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid var(--border-highlight);
+      border-radius: 22px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.22);
+      transform: translateX(440px);
+      transition: transform 0.5s var(--spring-ease);
+      overflow-y: auto;
+    }
+
+    .inspector-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .element-hero-badge {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hero-symbol-box {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.25), 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .hero-symbol-box span {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .hero-symbol-box small {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .hero-titles h2 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .category-pill {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: grid;
+      place-items: center;
+      transition: all 0.15s;
+    }
+
+    .close-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #EF4444;
+      color: #EF4444;
+    }
+
+    /* 3D/2D Interactive Bohr Atom Canvas */
+    .bohr-stage {
+      width: 100%;
+      height: 210px;
+      border-radius: 16px;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(3, 7, 18, 0.95) 100%);
+      border: 1px solid var(--border-hairline);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.7);
+    }
+
+    .bohr-stage-label {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: rgba(0,0,0,0.5);
+      padding: 3px 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .bento-box {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .bento-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .bento-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .element-summary {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #CBD5E1;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-hairline);
+      padding: 14px;
+      border-radius: 12px;
+    }
+
+    /* Bottom Dock Controls */
+    .bottom-dock {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      transition: opacity 0.4s var(--spring-ease), transform 0.4s var(--spring-ease);
+    }
+
+    /* Cinema / Reels Mode (Hides UI Chrome for clean screen recording) */
+    body.cinema-mode .line-sidebar {
+      transform: translateX(-300px);
+      opacity: 0;
+    }
+
+    body.cinema-mode .hud-header {
+      left: 24px;
+      background: rgba(15, 23, 42, 0.25);
+    }
+
+    @media (max-width: 900px) {
+      .line-sidebar {
+        display: none;
+      }
+      .hud-header {
+        left: 16px;
+        right: 16px;
+      }
+      .inspector-drawer {
+        width: calc(100vw - 32px);
+        right: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header HUD -->
+  <header class="hud-header">
+    <div class="brand-cluster">
+      <div class="status-orb"></div>
+      <div class="brand-title">
+        QUANTUM TABLE
+        <span class="brand-badge">PRO MAX 3D</span>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search element name, symbol, or atomic #..." />
+    </div>
+
+    <div class="hud-actions">
+      <button class="glass-btn" id="shatterBtn" title="Break & Scatter 118 Elements in 3D">
+        <span>💥</span> Quantum Shatter
+      </button>
+      <button class="glass-btn" id="spinBtn" title="Toggle Auto Turntable Orbit">
+        <span>🔄</span> Auto-Orbit
+      </button>
+      <button class="glass-btn" id="cinemaBtn" title="Clean HUD for Reels / Shorts Recording">
+        <span>🎬</span> Reels Mode
+      </button>
+    </div>
+  </header>
+
+  <!-- Left ReactBits Line Sidebar -->
+  <aside class="line-sidebar">
+    <div>
+      <div class="sidebar-section-title">3D Geometry Mode</div>
+      <div class="line-nav-container" id="modeNav">
+        <div class="line-track"></div>
+        <div class="line-indicator" id="modeIndicator"></div>
+        <button class="nav-item active" data-mode="table">
+          <span>⊞ Standard Table</span>
+          <span class="nav-badge">18×10</span>
+        </button>
+        <button class="nav-item" data-mode="sphere">
+          <span>🌐 3D Globe Sphere</span>
+          <span class="nav-badge">360°</span>
+        </button>
+        <button class="nav-item" data-mode="helix">
+          <span>🧬 Double Helix</span>
+          <span class="nav-badge">DNA</span>
+        </button>
+        <button class="nav-item" data-mode="grid">
+          <span>🧊 Quantum Matrix</span>
+          <span class="nav-badge">5×4×6</span>
+        </button>
+      </div>
+
+      <div class="sidebar-section-title">Chemical Families</div>
+      <div class="line-nav-container" id="catNav">
+        <div class="line-track"></div>
+        <div class="line-indicator" id="catIndicator"></div>
+        <button class="nav-item active" data-category="all">
+          <span><span class="cat-dot" style="color:#38BDF8;background:#38BDF8"></span>All Elements</span>
+          <span class="nav-badge">118</span>
+        </button>
+        <button class="nav-item" data-category="alkali">
+          <span><span class="cat-dot" style="color:#F43F5E;background:#F43F5E"></span>Alkali Metals</span>
+          <span class="nav-badge">6</span>
+        </button>
+        <button class="nav-item" data-category="alkaline">
+          <span><span class="cat-dot" style="color:#FB923C;background:#FB923C"></span>Alkaline Earth</span>
+          <span class="nav-badge">6</span>
+        </button>
+        <button class="nav-item" data-category="transition">
+          <span><span class="cat-dot" style="color:#38BDF8;background:#38BDF8"></span>Transition Metals</span>
+          <span class="nav-badge">38</span>
+        </button>
+        <button class="nav-item" data-category="post-transition">
+          <span><span class="cat-dot" style="color:#10B981;background:#10B981"></span>Post-Transition</span>
+          <span class="nav-badge">11</span>
+        </button>
+        <button class="nav-item" data-category="metalloid">
+          <span><span class="cat-dot" style="color:#FBBF24;background:#FBBF24"></span>Metalloids</span>
+          <span class="nav-badge">7</span>
+        </button>
+        <button class="nav-item" data-category="nonmetal">
+          <span><span class="cat-dot" style="color:#A855F7;background:#A855F7"></span>Reactive Nonmetals</span>
+          <span class="nav-badge">7</span>
+        </button>
+        <button class="nav-item" data-category="halogen">
+          <span><span class="cat-dot" style="color:#EC4899;background:#EC4899"></span>Halogens</span>
+          <span class="nav-badge">6</span>
+        </button>
+        <button class="nav-item" data-category="noble">
+          <span><span class="cat-dot" style="color:#6366F1;background:#6366F1"></span>Noble Gases</span>
+          <span class="nav-badge">7</span>
+        </button>
+        <button class="nav-item" data-category="lanthanide">
+          <span><span class="cat-dot" style="color:#14B8A6;background:#14B8A6"></span>Lanthanides</span>
+          <span class="nav-badge">15</span>
+        </button>
+        <button class="nav-item" data-category="actinide">
+          <span><span class="cat-dot" style="color:#F97316;background:#F97316"></span>Actinides</span>
+          <span class="nav-badge">15</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="bento-box" style="font-size:11px; color:var(--text-secondary); line-height:1.5;">
+      <strong style="color:var(--text-primary); display:block; margin-bottom:3px;">Interactive Controls</strong>
+      • Left Drag: 360° 3D Orbit<br/>
+      • Scroll: Smooth Camera Zoom<br/>
+      • Click Card: Inspect Atom
+    </div>
+  </aside>
+
+  <!-- 3D WebGL / CSS3D Container -->
+  <main id="viewport"></main>
+
+  <!-- Bottom Quick Morph Dock -->
+  <div class="bottom-dock">
+    <button class="glass-btn active" data-quick-mode="table">⊞ Table</button>
+    <button class="glass-btn" data-quick-mode="sphere">🌐 Globe</button>
+    <button class="glass-btn" data-quick-mode="helix">🧬 Helix</button>
+    <button class="glass-btn" data-quick-mode="grid">🧊 3D Grid</button>
+    <button class="glass-btn" id="resetCamBtn">🎯 Reset View</button>
+  </div>
+
+  <!-- Right Element Inspector Drawer -->
+  <aside class="inspector-drawer" id="inspectorDrawer">
+    <div class="drawer-header">
+      <div class="element-hero-badge">
+        <div class="hero-symbol-box" id="drawerSymbolBox">
+          <span id="drawerSymbol">Au</span>
+          <small id="drawerNumber">#79</small>
+        </div>
+        <div class="hero-titles">
+          <h2 id="drawerName">Gold</h2>
+          <span class="category-pill" id="drawerCategory">Transition Metal</span>
+        </div>
+      </div>
+      <button class="close-btn" id="closeDrawerBtn">✕</button>
+    </div>
+
+    <div class="bohr-stage">
+      <canvas id="bohrCanvas" width="320" height="210"></canvas>
+      <span class="bohr-stage-label" id="bohrShellsLabel">Shells: 2, 8, 18, 32, 18, 1</span>
+    </div>
+
+    <div class="bento-grid">
+      <div class="bento-box">
+        <div class="bento-label">Atomic Mass</div>
+        <div class="bento-value" id="drawerMass">196.97 u</div>
+      </div>
+      <div class="bento-box">
+        <div class="bento-label">Standard Phase</div>
+        <div class="bento-value" id="drawerPhase">Solid</div>
+      </div>
+      <div class="bento-box">
+        <div class="bento-label">Electron Config</div>
+        <div class="bento-value" id="drawerConfig" style="font-size:12px;">[Xe] 4f14 5d10 6s1</div>
+      </div>
+      <div class="bento-box">
+        <div class="bento-label">Grid Position</div>
+        <div class="bento-value" id="drawerPos">Group 11, Period 6</div>
+      </div>
+    </div>
+
+    <div class="element-summary" id="drawerSummary">
+      Select any element in the 3D quantum space to inspect its live orbital shell model, atomic mass, and physical classification.
+    </div>
+  </aside>
+
+  <!-- ES Module Shims & Three.js + Tween.js CDN -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "@tweenjs/tween.js": "https://cdn.jsdelivr.net/npm/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+    import TWEEN from '@tweenjs/tween.js';
+
+    // Category Color & Glow Palette (Watermorphism + Glassmorphism)
+    const CATEGORY_META = {
+      'alkali':          { name: 'Alkali Metal',        color: '#F43F5E', glow: 'rgba(244, 63, 94, 0.5)' },
+      'alkaline':        { name: 'Alkaline Earth',      color: '#FB923C', glow: 'rgba(251, 146, 60, 0.5)' },
+      'transition':      { name: 'Transition Metal',    color: '#38BDF8', glow: 'rgba(56, 189, 248, 0.5)' },
+      'post-transition': { name: 'Post-Transition',     color: '#10B981', glow: 'rgba(16, 185, 129, 0.5)' },
+      'metalloid':       { name: 'Metalloid',           color: '#FBBF24', glow: 'rgba(251, 191, 36, 0.5)' },
+      'nonmetal':        { name: 'Reactive Nonmetal',   color: '#A855F7', glow: 'rgba(168, 85, 247, 0.5)' },
+      'halogen':         { name: 'Halogen',             color: '#EC4899', glow: 'rgba(236, 72, 153, 0.5)' },
+      'noble':           { name: 'Noble Gas',           color: '#6366F1', glow: 'rgba(99, 102, 241, 0.5)' },
+      'lanthanide':      { name: 'Lanthanide',          color: '#14B8A6', glow: 'rgba(20, 184, 166, 0.5)' },
+      'actinide':        { name: 'Actinide',            color: '#F97316', glow: 'rgba(249, 115, 22, 0.5)' }
+    };
+
+    // Complete 118 Elements Compact Dataset: [Z, Symbol, Name, Mass, Category, Col(1-18), Row(1-10), Phase]
+    const RAW_ELEMENTS = [
+      [1,"H","Hydrogen","1.008","nonmetal",1,1,"Gas"],
+      [2,"He","Helium","4.0026","noble",18,1,"Gas"],
+      [3,"Li","Lithium","6.94","alkali",1,2,"Solid"],
+      [4,"Be","Beryllium","9.0122","alkaline",2,2,"Solid"],
+      [5,"B","Boron","10.81","metalloid",13,2,"Solid"],
+      [6,"C","Carbon","12.011","nonmetal",14,2,"Solid"],
+      [7,"N","Nitrogen","14.007","nonmetal",15,2,"Gas"],
+      [8,"O","Oxygen","15.999","nonmetal",16,2,"Gas"],
+      [9,"F","Fluorine","18.998","halogen",17,2,"Gas"],
+      [10,"Ne","Neon","20.180","noble",18,2,"Gas"],
+      [11,"Na","Sodium","22.990","alkali",1,3,"Solid"],
+      [12,"Mg","Magnesium","24.305","alkaline",2,3,"Solid"],
+      [13,"Al","Aluminium","26.982","post-transition",13,3,"Solid"],
+      [14,"Si","Silicon","28.085","metalloid",14,3,"Solid"],
+      [15,"P","Phosphorus","30.974","nonmetal",15,3,"Solid"],
+      [16,"S","Sulfur","32.06","nonmetal",16,3,"Solid"],
+      [17,"Cl","Chlorine","35.45","halogen",17,3,"Gas"],
+      [18,"Ar","Argon","39.948","noble",18,3,"Gas"],
+      [19,"K","Potassium","39.098","alkali",1,4,"Solid"],
+      [20,"Ca","Calcium","40.078","alkaline",2,4,"Solid"],
+      [21,"Sc","Scandium","44.956","transition",3,4,"Solid"],
+      [22,"Ti","Titanium","47.867","transition",4,4,"Solid"],
+      [23,"V","Vanadium","50.942","transition",5,4,"Solid"],
+      [24,"Cr","Chromium","51.996","transition",6,4,"Solid"],
+      [25,"Mn","Manganese","54.938","transition",7,4,"Solid"],
+      [26,"Fe","Iron","55.845","transition",8,4,"Solid"],
+      [27,"Co","Cobalt","58.933","transition",9,4,"Solid"],
+      [28,"Ni","Nickel","58.693","transition",10,4,"Solid"],
+      [29,"Cu","Copper","63.546","transition",11,4,"Solid"],
+      [30,"Zn","Zinc","65.38","transition",12,4,"Solid"],
+      [31,"Ga","Gallium","69.723","post-transition",13,4,"Solid"],
+      [32,"Ge","Germanium","72.630","metalloid",14,4,"Solid"],
+      [33,"As","Arsenic","74.922","metalloid",15,4,"Solid"],
+      [34,"Se","Selenium","78.971","nonmetal",16,4,"Solid"],
+      [35,"Br","Bromine","79.904","halogen",17,4,"Liquid"],
+      [36,"Kr","Krypton","83.798","noble",18,4,"Gas"],
+      [37,"Rb","Rubidium","85.468","alkali",1,5,"Solid"],
+      [38,"Sr","Strontium","87.62","alkaline",2,5,"Solid"],
+      [39,"Y","Yttrium","88.906","transition",3,5,"Solid"],
+      [40,"Zr","Zirconium","91.224","transition",4,5,"Solid"],
+      [41,"Nb","Niobium","92.906","transition",5,5,"Solid"],
+      [42,"Mo","Molybdenum","95.95","transition",6,5,"Solid"],
+      [43,"Tc","Technetium","98","transition",7,5,"Solid"],
+      [44,"Ru","Ruthenium","101.07","transition",8,5,"Solid"],
+      [45,"Rh","Rhodium","102.91","transition",9,5,"Solid"],
+      [46,"Pd","Palladium","106.42","transition",10,5,"Solid"],
+      [47,"Ag","Silver","107.87","transition",11,5,"Solid"],
+      [48,"Cd","Cadmium","112.41","transition",12,5,"Solid"],
+      [49,"In","Indium","114.82","post-transition",13,5,"Solid"],
+      [50,"Sn","Tin","118.71","post-transition",14,5,"Solid"],
+      [51,"Sb","Antimony","121.76","metalloid",15,5,"Solid"],
+      [52,"Te","Tellurium","127.60","metalloid",16,5,"Solid"],
+      [53,"I","Iodine","126.90","halogen",17,5,"Solid"],
+      [54,"Xe","Xenon","131.29","noble",18,5,"Gas"],
+      [55,"Cs","Caesium","132.91","alkali",1,6,"Solid"],
+      [56,"Ba","Barium","137.33","alkaline",2,6,"Solid"],
+      [57,"La","Lanthanum","138.91","lanthanide",4,9,"Solid"],
+      [58,"Ce","Cerium","140.12","lanthanide",5,9,"Solid"],
+      [59,"Pr","Praseodymium","140.91","lanthanide",6,9,"Solid"],
+      [60,"Nd","Neodymium","144.24","lanthanide",7,9,"Solid"],
+      [61,"Pm","Promethium","145","lanthanide",8,9,"Solid"],
+      [62,"Sm","Samarium","150.36","lanthanide",9,9,"Solid"],
+      [63,"Eu","Europium","151.96","lanthanide",10,9,"Solid"],
+      [64,"Gd","Gadolinium","157.25","lanthanide",11,9,"Solid"],
+      [65,"Tb","Terbium","158.93","lanthanide",12,9,"Solid"],
+      [66,"Dy","Dysprosium","162.50","lanthanide",13,9,"Solid"],
+      [67,"Ho","Holmium","164.93","lanthanide",14,9,"Solid"],
+      [68,"Er","Erbium","167.26","lanthanide",15,9,"Solid"],
+      [69,"Tm","Thulium","168.93","lanthanide",16,9,"Solid"],
+      [70,"Yb","Ytterbium","173.05","lanthanide",17,9,"Solid"],
+      [71,"Lu","Lutetium","174.97","lanthanide",18,9,"Solid"],
+      [72,"Hf","Hafnium","178.49","transition",4,6,"Solid"],
+      [73,"Ta","Tantalum","180.95","transition",5,6,"Solid"],
+      [74,"W","Tungsten","183.84","transition",6,6,"Solid"],
+      [75,"Re","Rhenium","186.21","transition",7,6,"Solid"],
+      [76,"Os","Osmium","190.23","transition",8,6,"Solid"],
+      [77,"Ir","Iridium","192.22","transition",9,6,"Solid"],
+      [78,"Pt","Platinum","195.08","transition",10,6,"Solid"],
+      [79,"Au","Gold","196.97","transition",11,6,"Solid"],
+      [80,"Hg","Mercury","200.59","transition",12,6,"Liquid"],
+      [81,"Tl","Thallium","204.38","post-transition",13,6,"Solid"],
+      [82,"Pb","Lead","207.2","post-transition",14,6,"Solid"],
+      [83,"Bi","Bismuth","208.98","post-transition",15,6,"Solid"],
+      [84,"Po","Polonium","209","post-transition",16,6,"Solid"],
+      [85,"At","Astatine","210","halogen",17,6,"Solid"],
+      [86,"Rn","Radon","222","noble",18,6,"Gas"],
+      [87,"Fr","Francium","223","alkali",1,7,"Solid"],
+      [88,"Ra","Radium","226","alkaline",2,7,"Solid"],
+      [89,"Ac","Actinium","227","actinide",4,10,"Solid"],
+      [90,"Th","Thorium","232.04","actinide",5,10,"Solid"],
+      [91,"Pa","Protactinium","231.04","actinide",6,10,"Solid"],
+      [92,"U","Uranium","238.03","actinide",7,10,"Solid"],
+      [93,"Np","Neptunium","237","actinide",8,10,"Solid"],
+      [94,"Pu","Plutonium","244","actinide",9,10,"Solid"],
+      [95,"Am","Americium","243","actinide",10,10,"Solid"],
+      [96,"Cm","Curium","247","actinide",11,10,"Solid"],
+      [97,"Bk","Berkelium","247","actinide",12,10,"Solid"],
+      [98,"Cf","Californium","251","actinide",13,10,"Solid"],
+      [99,"Es","Einsteinium","252","actinide",14,10,"Solid"],
+      [100,"Fm","Fermium","257","actinide",15,10,"Solid"],
+      [101,"Md","Mendelevium","258","actinide",16,10,"Solid"],
+      [102,"No","Nobelium","259","actinide",17,10,"Solid"],
+      [103,"Lr","Lawrencium","266","actinide",18,10,"Solid"],
+      [104,"Rf","Rutherfordium","267","transition",4,7,"Solid"],
+      [105,"Db","Dubnium","268","transition",5,7,"Solid"],
+      [106,"Sg","Seaborgium","269","transition",6,7,"Solid"],
+      [107,"Bh","Bohrium","270","transition",7,7,"Solid"],
+      [108,"Hs","Hassium","277","transition",8,7,"Solid"],
+      [109,"Mt","Meitnerium","278","transition",9,7,"Solid"],
+      [110,"Ds","Darmstadtium","281","transition",10,7,"Solid"],
+      [111,"Rg","Roentgenium","282","transition",11,7,"Solid"],
+      [112,"Cn","Copernicium","285","transition",12,7,"Liquid"],
+      [113,"Nh","Nihonium","286","post-transition",13,7,"Solid"],
+      [114,"Fl","Flerovium","289","post-transition",14,7,"Solid"],
+      [115,"Mc","Moscovium","290","post-transition",15,7,"Solid"],
+      [116,"Lv","Livermorium","293","post-transition",16,7,"Solid"],
+      [117,"Ts","Tennessine","294","halogen",17,7,"Solid"],
+      [118,"Og","Oganesson","294","noble",18,7,"Gas"]
+    ];
+
+    // Compute realistic electron shells for Bohr visualization
+    function getElectronShells(z) {
+      const caps = [2, 8, 18, 32, 32, 18, 8];
+      const shells = [];
+      let rem = z;
+      for (let i = 0; i < caps.length && rem > 0; i++) {
+        const take = Math.min(rem, caps[i]);
+        shells.push(take);
+        rem -= take;
+      }
+      return shells;
+    }
+
+    // Scene, Camera, CSS3DRenderer Setup
+    const viewport = document.getElementById('viewport');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 10000);
+    camera.position.set(0, 0, 2950);
+
+    const renderer = new CSS3DRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    viewport.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 450;
+    controls.maxDistance = 6000;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 1.4;
+
+    const objects = [];
+    const targets = { table: [], sphere: [], helix: [], grid: [] };
+    let currentLayout = 'table';
+
+    // Build 118 3D Cards & Calculate Morph Targets
+    RAW_ELEMENTS.forEach((item, i) => {
+      const [z, symbol, name, mass, category, col, row, phase] = item;
+      const meta = CATEGORY_META[category];
+
+      const card = document.createElement('div');
+      card.className = 'element-card';
+      card.style.setProperty('--cat-color', meta.color);
+      card.style.setProperty('--cat-glow', meta.glow);
+      card.dataset.category = category;
+      card.dataset.name = name.toLowerCase();
+      card.dataset.symbol = symbol.toLowerCase();
+      card.dataset.z = z;
+
+      card.innerHTML = `
+        <div class="card-top">
+          <span>${z}</span>
+          <span class="card-phase">${phase}</span>
+        </div>
+        <div class="card-symbol-wrap">
+          <div class="card-symbol">${symbol}</div>
+        </div>
+        <div class="card-bottom">
+          <div class="card-name">${name}</div>
+          <div class="card-mass">${mass} u</div>
+          <div class="card-bar"></div>
+        </div>
+      `;
+
+      // Start scattered in deep space for dramatic entrance
+      const objectCSS = new CSS3DObject(card);
+      objectCSS.position.x = (Math.random() - 0.5) * 4500;
+      objectCSS.position.y = (Math.random() - 0.5) * 4500;
+      objectCSS.position.z = (Math.random() - 0.5) * 4500;
+      scene.add(objectCSS);
+      objects.push(objectCSS);
+
+      // Click to Zoom Camera & Open Inspector Drawer
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        focusElement(objectCSS, item);
+      });
+
+      // 1. TABLE TARGET
+      const objTable = new THREE.Object3D();
+      objTable.position.x = (col * 148) - 1400;
+      objTable.position.y = -(row * 186) + 980;
+      objTable.position.z = 0;
+      targets.table.push(objTable);
+    });
+
+    // 2. SPHERE (3D GLOBE) TARGET
+    const vector = new THREE.Vector3();
+    for (let i = 0, l = objects.length; i < l; i++) {
+      const phi = Math.acos(-1 + (2 * i) / l);
+      const theta = Math.sqrt(l * Math.PI) * phi;
+      const objSphere = new THREE.Object3D();
+      objSphere.position.setFromSphericalCoords(920, phi, theta);
+      vector.copy(objSphere.position).multiplyScalar(2);
+      objSphere.lookAt(vector);
+      targets.sphere.push(objSphere);
+    }
+
+    // 3. DOUBLE HELIX TARGET
+    for (let i = 0, l = objects.length; i < l; i++) {
+      const theta = i * 0.22 + Math.PI;
+      const y = -(i * 14) + 820;
+      const objHelix = new THREE.Object3D();
+      objHelix.position.setFromCylindricalCoords(980, theta, y);
+      vector.x = objHelix.position.x * 2;
+      vector.y = objHelix.position.y;
+      vector.z = objHelix.position.z * 2;
+      objHelix.lookAt(vector);
+      targets.helix.push(objHelix);
+    }
+
+    // 4. 3D QUANTUM GRID TARGET
+    for (let i = 0; i < objects.length; i++) {
+      const objGrid = new THREE.Object3D();
+      objGrid.position.x = ((i % 5) * 380) - 760;
+      objGrid.position.y = (-(Math.floor(i / 5) % 4) * 380) + 570;
+      objGrid.position.z = (Math.floor(i / 20)) * 420 - 1050;
+      targets.grid.push(objGrid);
+    }
+
+    // Morph Transition Engine
+    function transform(targetsArray, duration = 1600) {
+      TWEEN.removeAll();
+      for (let i = 0; i < objects.length; i++) {
+        const object = objects[i];
+        const target = targetsArray[i];
+
+        new TWEEN.Tween(object.position)
+          .to({ x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration * 0.5)
+          .easing(TWEEN.Easing.Exponential.InOut)
+          .start();
+
+        new TWEEN.Tween(object.rotation)
+          .to({ x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration * 0.5)
+          .easing(TWEEN.Easing.Exponential.InOut)
+          .start();
+      }
+    }
+
+    // Quantum Shatter (Break all elements into 3D chaos, then reassemble on click)
+    let isShattered = false;
+    function triggerQuantumShatter() {
+      const shatterBtn = document.getElementById('shatterBtn');
+      if (!isShattered) {
+        isShattered = true;
+        shatterBtn.classList.add('active');
+        shatterBtn.innerHTML = `<span>🧲</span> Reassemble`;
+        TWEEN.removeAll();
+        objects.forEach((obj) => {
+          new TWEEN.Tween(obj.position)
+            .to({
+              x: (Math.random() - 0.5) * 3800,
+              y: (Math.random() - 0.5) * 3800,
+              z: (Math.random() - 0.5) * 3800
+            }, 1300)
+            .easing(TWEEN.Easing.Back.Out)
+            .start();
+
+          new TWEEN.Tween(obj.rotation)
+            .to({
+              x: (Math.random() - 0.5) * Math.PI * 2,
+              y: (Math.random() - 0.5) * Math.PI * 2,
+              z: (Math.random() - 0.5) * Math.PI * 2
+            }, 1300)
+            .easing(TWEEN.Easing.Back.Out)
+            .start();
+        });
+      } else {
+        isShattered = false;
+        shatterBtn.classList.remove('active');
+        shatterBtn.innerHTML = `<span>💥</span> Quantum Shatter`;
+        transform(targets[currentLayout], 1500);
+      }
+    }
+
+    document.getElementById('shatterBtn').addEventListener('click', triggerQuantumShatter);
+
+    // Camera Focus & Inspector Drawer Logic
+    let activeAtomShells = [2, 8, 18, 32, 18, 1];
+    let activeAtomColor = '#38BDF8';
+
+    function focusElement(cssObj, itemData) {
+      const [z, symbol, name, mass, category, col, row, phase] = itemData;
+      const meta = CATEGORY_META[category];
+
+      // Smoothly glide camera toward clicked 3D element card
+      const targetPos = cssObj.position.clone();
+      const camOffset = new THREE.Vector3(0, 0, 650);
+      camOffset.applyQuaternion(cssObj.quaternion);
+      const newCamPos = targetPos.clone().add(camOffset);
+
+      new TWEEN.Tween(camera.position)
+        .to({ x: newCamPos.x, y: newCamPos.y, z: newCamPos.z }, 1100)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .start();
+
+      new TWEEN.Tween(controls.target)
+        .to({ x: targetPos.x, y: targetPos.y, z: targetPos.z }, 1100)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .start();
+
+      // Populate Inspector Drawer
+      document.getElementById('drawerSymbol').textContent = symbol;
+      document.getElementById('drawerNumber').textContent = `#${z}`;
+      document.getElementById('drawerName').textContent = name;
+      const catPill = document.getElementById('drawerCategory');
+      catPill.textContent = meta.name;
+      catPill.style.color = meta.color;
+      catPill.style.borderColor = meta.color;
+
+      const symBox = document.getElementById('drawerSymbolBox');
+      symBox.style.borderColor = meta.color;
+      symBox.style.boxShadow = `0 0 25px ${meta.glow}, inset 0 2px 4px rgba(255,255,255,0.25)`;
+
+      document.getElementById('drawerMass').textContent = `${mass} u`;
+      document.getElementById('drawerPhase').textContent = phase;
+
+      const shells = getElectronShells(z);
+      activeAtomShells = shells;
+      activeAtomColor = meta.color;
+
+      document.getElementById('bohrShellsLabel').textContent = `Shells: ${shells.join(' • ')}`;
+      document.getElementById('drawerConfig').textContent = `${shells.length} Orbital Rings (${z} e⁻)`;
+      document.getElementById('drawerPos').textContent = `Col ${col} • Row ${row}`;
+      document.getElementById('drawerSummary').textContent =
+        `${name} (${symbol}) is a ${phase.toLowerCase()} ${meta.name.toLowerCase()} with atomic number ${z} and an atomic mass of ${mass} u. Its electrons are arranged across ${shells.length} quantum energy shells (${shells.join(', ')}).`;
+
+      document.getElementById('inspectorDrawer').classList.add('open');
+    }
+
+    function resetCameraView() {
+      document.getElementById('inspectorDrawer').classList.remove('open');
+      new TWEEN.Tween(camera.position)
+        .to({ x: 0, y: 0, z: currentLayout === 'sphere' ? 2350 : 2950 }, 1200)
+        .easing(TWEEN.Easing.Exponential.Out)
+        .start();
+
+      new TWEEN.Tween(controls.target)
+        .to({ x: 0, y: 0, z: 0 }, 1200)
+        .easing(TWEEN.Easing.Exponential.Out)
+        .start();
+    }
+
+    document.getElementById('closeDrawerBtn').addEventListener('click', resetCameraView);
+    document.getElementById('resetCamBtn').addEventListener('click', resetCameraView);
+
+    // Live 60FPS Bohr Atom Canvas Renderer inside Inspector
+    const bohrCanvas = document.getElementById('bohrCanvas');
+    const bCtx = bohrCanvas.getContext('2d');
+    let bohrAngle = 0;
+
+    function drawBohrModel() {
+      bCtx.clearRect(0, 0, bohrCanvas.width, bohrCanvas.height);
+      const cx = bohrCanvas.width / 2;
+      const cy = bohrCanvas.height / 2;
+
+      // Glowing Nucleus
+      const grad = bCtx.createRadialGradient(cx, cy, 2, cx, cy, 18);
+      grad.addColorStop(0, '#FFFFFF');
+      grad.addColorStop(0.4, activeAtomColor);
+      grad.addColorStop(1, 'transparent');
+      bCtx.fillStyle = grad;
+      bCtx.beginPath();
+      bCtx.arc(cx, cy, 18, 0, Math.PI * 2);
+      bCtx.fill();
+
+      // Concentric Electron Shells
+      const maxRadius = 86;
+      const step = maxRadius / Math.max(activeAtomShells.length, 1);
+
+      activeAtomShells.forEach((count, sIdx) => {
+        const radius = 22 + sIdx * step;
+        bCtx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+        bCtx.lineWidth = 1;
+        bCtx.beginPath();
+        bCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+        bCtx.stroke();
+
+        const speed = (sIdx % 2 === 0 ? 1 : -1) * (0.022 - sIdx * 0.002);
+        for (let e = 0; e < count; e++) {
+          const theta = (e / count) * Math.PI * 2 + bohrAngle * (sIdx + 1) * (sIdx % 2 === 0 ? 1 : -1);
+          const ex = cx + Math.cos(theta) * radius;
+          const ey = cy + Math.sin(theta) * radius;
+
+          bCtx.fillStyle = activeAtomColor;
+          bCtx.shadowColor = activeAtomColor;
+          bCtx.shadowBlur = 8;
+          bCtx.beginPath();
+          bCtx.arc(ex, ey, 3.2, 0, Math.PI * 2);
+          bCtx.fill();
+          bCtx.shadowBlur = 0;
+        }
+      });
+
+      bohrAngle += 0.012;
+    }
+
+    // ReactBits Line Sidebar Indicator Gliding Helper
+    function updateLineIndicator(containerId, indicatorId, activeButton, color = '#22D3EE') {
+      const indicator = document.getElementById(indicatorId);
+      if (!activeButton || !indicator) return;
+      indicator.style.top = `${activeButton.offsetTop}px`;
+      indicator.style.height = `${activeButton.offsetHeight}px`;
+      indicator.style.background = color;
+      indicator.style.boxShadow = `0 0 12px ${color}`;
+    }
+
+    // Setup Mode Switching (Line Sidebar + Bottom Dock Sync)
+    function setGeometryMode(mode) {
+      currentLayout = mode;
+      isShattered = false;
+      const shatterBtn = document.getElementById('shatterBtn');
+      shatterBtn.classList.remove('active');
+      shatterBtn.innerHTML = `<span>💥</span> Quantum Shatter`;
+
+      // Update Sidebar
+      document.querySelectorAll('#modeNav .nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+        if (btn.dataset.mode === mode) {
+          updateLineIndicator('modeNav', 'modeIndicator', btn);
+        }
+      });
+
+      // Update Bottom Dock
+      document.querySelectorAll('[data-quick-mode]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.quickMode === mode);
+      });
+
+      transform(targets[mode], 1500);
+      resetCameraView();
+    }
+
+    document.querySelectorAll('#modeNav .nav-item').forEach(btn => {
+      btn.addEventListener('click', () => setGeometryMode(btn.dataset.mode));
+    });
+
+    document.querySelectorAll('[data-quick-mode]').forEach(btn => {
+      btn.addEventListener('click', () => setGeometryMode(btn.dataset.quickMode));
+    });
+
+    // Setup Chemical Family Filtering
+    let currentCategory = 'all';
+    function applyFilters() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      objects.forEach(obj => {
+        const el = obj.element;
+        const matchCat = currentCategory === 'all' || el.dataset.category === currentCategory;
+        const matchSearch = !query ||
+          el.dataset.name.includes(query) ||
+          el.dataset.symbol.includes(query) ||
+          el.dataset.z === query;
+
+        el.classList.toggle('dimmed', !(matchCat && matchSearch));
+      });
+    }
+
+    document.querySelectorAll('#catNav .nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#catNav .nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.category;
+        const meta = CATEGORY_META[currentCategory];
+        updateLineIndicator('catNav', 'catIndicator', btn, meta ? meta.color : '#38BDF8');
+        applyFilters();
+      });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+    // Top Action Toggles: Auto-Orbit & Reels Cinema Mode
+    const spinBtn = document.getElementById('spinBtn');
+    spinBtn.addEventListener('click', () => {
+      controls.autoRotate = !controls.autoRotate;
+      spinBtn.classList.toggle('active', controls.autoRotate);
+    });
+
+    const cinemaBtn = document.getElementById('cinemaBtn');
+    cinemaBtn.addEventListener('click', () => {
+      document.body.classList.toggle('cinema-mode');
+      cinemaBtn.classList.toggle('active', document.body.classList.contains('cinema-mode'));
+    });
+
+    // Initialize Line Indicators & Entrance Morph Animation
+    window.addEventListener('load', () => {
+      updateLineIndicator('modeNav', 'modeIndicator', document.querySelector('#modeNav .nav-item.active'));
+      updateLineIndicator('catNav', 'catIndicator', document.querySelector('#catNav .nav-item.active'));
+      transform(targets.table, 1800);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Master 60FPS Render Loop
+    function animate() {
+      requestAnimationFrame(animate);
+      TWEEN.update();
+      controls.update();
+      renderer.render(scene, camera);
+      drawBohrModel();
+    }
+    animate();
+  </script>
+</body>
+</html>
